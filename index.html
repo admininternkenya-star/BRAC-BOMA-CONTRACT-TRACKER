@@ -31,37 +31,46 @@
 </head>
 <body class="h-full bg-slate-100 text-slate-800 antialiased flex flex-col">
 
+    <!-- Mobile Drawer Overlay -->
+    <div id="sidebar-overlay" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-slate-900/60 z-30 hidden lg:hidden backdrop-blur-sm transition-opacity"></div>
+
     <!-- Top Navigation Header -->
-    <header class="bg-navy-900 text-white px-6 py-4 flex flex-wrap items-center justify-between border-b border-navy-800 shadow-md shrink-0">
+    <header class="bg-navy-900 text-white px-4 lg:px-6 py-3 lg:py-4 flex flex-wrap items-center justify-between border-b border-navy-800 shadow-md shrink-0 z-40">
         <div class="flex items-center space-x-3">
-            <div class="bg-brand-500 text-white p-2.5 rounded-xl shadow">
-                <i class="fa-solid fa-shield-halved text-xl"></i>
+            <button onclick="toggleMobileSidebar()" class="lg:hidden text-white hover:text-brand-500 p-1.5 focus:outline-none">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+            <div class="bg-brand-500 text-white p-2 lg:p-2.5 rounded-xl shadow">
+                <i class="fa-solid fa-shield-halved text-lg lg:text-xl"></i>
             </div>
             <div>
-                <h1 class="font-bold text-lg leading-tight">BRAC-BOMA CONTRACT DASHBOARD TRACKER</h1>
-                <p class="text-xs text-slate-300">Africa Regional Office Fit-Out (The Atrium, Hurlingham - 7,880 sq ft)</p>
+                <h1 class="font-bold text-sm lg:text-lg leading-tight">BRAC-BOMA CONTRACT DASHBOARD TRACKER</h1>
+                <p class="text-[10px] lg:text-xs text-slate-300">Africa Regional Office Fit-Out (The Atrium, Hurlingham - 7,880 sq ft)</p>
             </div>
         </div>
 
         <div class="flex items-center space-x-3 mt-2 sm:mt-0">
-            <span class="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-lg font-semibold flex items-center gap-1.5">
+            <span class="text-[10px] lg:text-xs bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1.5">
                 <i class="fa-solid fa-clock text-xs"></i>
-                Stage: Pre-Commencement Procurement Approval
+                Stage: Pre-Commencement Approval
             </span>
-            <button id="btn-lock-all" onclick="lockAllSessions()" class="hidden bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors shadow flex items-center space-x-1">
+            <button id="btn-lock-all" onclick="lockAllSessions()" class="hidden bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors shadow flex items-center space-x-1">
                 <i class="fa-solid fa-lock"></i>
-                <span>Lock Active Sessions</span>
+                <span class="hidden sm:inline">Lock Active Sessions</span>
             </button>
         </div>
     </header>
 
     <!-- Main Workspace Frame -->
-    <div class="flex-1 flex overflow-hidden">
+    <div class="flex-1 flex overflow-hidden relative">
 
-        <!-- Sidebar Navigation -->
-        <aside class="w-80 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 border-r border-slate-800">
+        <!-- Sidebar Navigation (Responsive Drawer) -->
+        <aside id="sidebar-drawer" class="fixed lg:static inset-y-0 left-0 w-72 lg:w-80 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 border-r border-slate-800 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40">
             <nav class="p-4 space-y-2 overflow-y-auto custom-scrollbar">
-                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">Workspaces Navigation</div>
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2 flex justify-between items-center">
+                    <span>Workspaces Navigation</span>
+                    <button onclick="toggleMobileSidebar()" class="lg:hidden text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                </div>
                 
                 <button onclick="switchTab('docs')" id="nav-docs" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-semibold bg-navy-900 text-white shadow-md transition-all">
                     <div class="flex items-center space-x-3">
@@ -112,7 +121,7 @@
 
         <!-- Main Dashboard Workspace -->
         <main class="flex-1 flex flex-col overflow-hidden bg-slate-100">
-            <div class="flex-1 p-6 overflow-y-auto space-y-6 custom-scrollbar" id="main-content">
+            <div class="flex-1 p-4 lg:p-6 overflow-y-auto space-y-6 custom-scrollbar" id="main-content">
                 <!-- Content Injected via JS -->
             </div>
         </main>
@@ -139,7 +148,7 @@
         </div>
     </div>
 
-    <!-- Link Modal for BRAC Documentation / Deliberations -->
+    <!-- Link Modal -->
     <div id="link-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center hidden z-50 p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 p-6 space-y-4">
             <h3 class="font-bold text-slate-900 text-base">Add Documentation Link / Reference</h3>
@@ -194,11 +203,11 @@
         const PIN_TRACY = "OperationsTracy2026";
 
         // Persistent Data Storage Arrays
-        let docsBOMA = JSON.parse(localStorage.getItem('brac_docs_boma')) || [];
-        let docsBRAC = JSON.parse(localStorage.getItem('brac_docs_brac')) || [];
+        let docsBOMA = [];
+        let docsBRAC = [];
 
         // Workspace 2: Contract Tracker Items (Derived from BoQ Schedule Phases)
-        let boqPhasesData = JSON.parse(localStorage.getItem('brac_boq_phases')) || [
+        let boqPhasesData = [
             { id: "P1-01", phase: "Phase 1: Pre-Construction & Mobilisation", item: "Review site drawings, BoQ, specifications & landlord rules", status: "Pending", confirmed: "Confirmed", comment: "Reviewing NCC permit guidelines" },
             { id: "P1-02", phase: "Phase 1: Pre-Construction & Mobilisation", item: "3D renders & final site dimensions confirmation", status: "Pending", confirmed: "Confirmed", comment: "Option 04 layout selected" },
             { id: "P1-03", phase: "Phase 1: Pre-Construction & Mobilisation", item: "Secure contractor approvals (OSHA, NCC, Landlord access)", status: "Pending", confirmed: "Pending Confirmation", comment: "Permit applications in progress" },
@@ -224,7 +233,7 @@
         ];
 
         // Workspace 3: Internal Deliberations & ToR Spatial Requirements
-        let internalDeliberations = JSON.parse(localStorage.getItem('brac_internal_delib')) || [
+        let internalDeliberations = [
             { id: "INT-01", topic: "Pre-Commencement Procurement Approval", owner: "Procurement / Tracy", status: "In Progress", notes: "Finalizing contractor evaluation and procurement approval.", docLink: "", uploader: "" },
             { id: "INT-02", topic: "Option 04 Spatial Plan Realignment", owner: "Spatial / BRAC Lead", status: "Approved", notes: "Operational zone (7,880 sq ft) split into primary & service zones.", docLink: "", uploader: "" },
             { id: "INT-03", topic: "Regional Director Executive Suite", owner: "Executive Team", status: "Approved", notes: "Includes self-contained washroom & double-glazed acoustic glass.", docLink: "", uploader: "" },
@@ -234,7 +243,7 @@
         ];
 
         // Workspace 4: Procurement & Financial Tranches
-        let procurementTranches = JSON.parse(localStorage.getItem('brac_proc_tranches')) || [
+        let procurementTranches = [
             { id: 1, title: "Payment 1 - Advance Payment (20%)", amount: "KES 4,956,483", status: "Pending Invoice / Pre-Commencement", action: "Offset Status: KES 0 Disbursed", doc: "", uploader: "", comments: "" },
             { id: 2, title: "Payment 2 - Design & Approvals (40%)", amount: "KES 9,912,966", status: "Scheduled", action: "Offset Status: KES 0 Disbursed", doc: "", uploader: "", comments: "" },
             { id: 3, title: "Payment 3 - 50% Work Progress (25%)", amount: "KES 6,195,604", status: "Scheduled", action: "Offset Status: KES 0 Disbursed", doc: "", uploader: "", comments: "" },
@@ -242,16 +251,47 @@
             { id: 5, title: "Payment 5 - Retention Release (5%)", amount: "KES 1,239,120", status: "Future Retention", action: "Offset Status: KES 0 Disbursed", doc: "", uploader: "", comments: "" }
         ];
 
-        function saveStorage() {
-            localStorage.setItem('brac_docs_boma', JSON.stringify(docsBOMA));
-            localStorage.setItem('brac_docs_brac', JSON.stringify(docsBRAC));
-            localStorage.setItem('brac_boq_phases', JSON.stringify(boqPhasesData));
-            localStorage.setItem('brac_internal_delib', JSON.stringify(internalDeliberations));
-            localStorage.setItem('brac_proc_tranches', JSON.stringify(procurementTranches));
-            document.getElementById('badge-docs').innerText = docsBOMA.length + docsBRAC.length;
+        function toggleMobileSidebar() {
+            const drawer = document.getElementById('sidebar-drawer');
+            const overlay = document.getElementById('sidebar-overlay');
+            drawer.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
         }
 
-        // Updated sync function with mode: 'no-cors' to prevent network blocks
+        // Realtime Fetching from Google Sheet API
+        function fetchCloudData() {
+            fetch(APPS_SCRIPT_URL)
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success' && res.data) {
+                    // Update Workspace 1 Cloud Uploads
+                    if (res.data.docsBoma && res.data.docsBoma.length > 0) {
+                        docsBOMA = [];
+                        docsBRAC = [];
+                        res.data.docsBoma.forEach(row => {
+                            const item = {
+                                id: Date.now() + Math.random(),
+                                name: row["File name"] || "Document",
+                                type: row["File Type"] || "PDF",
+                                format: row["File Type"] || "File",
+                                date: row["Timestamp"] ? new Date(row["Timestamp"]).toISOString().split('T')[0] : '2026-11-04',
+                                size: "Cloud Stored",
+                                data: row["File Data"], // Real Base64 Data String
+                                uploader: row["Uploaded By/ Category"] || "User",
+                                isLink: (row["File Type"] === "URL Link")
+                            };
+                            if (item.uploader.includes("BOMA")) docsBOMA.unshift(item);
+                            else docsBRAC.unshift(item);
+                        });
+                        document.getElementById('badge-docs').innerText = docsBOMA.length + docsBRAC.length;
+                    }
+                    renderActiveWorkspace();
+                }
+            })
+            .catch(err => console.error("Cloud fetch error:", err));
+        }
+
+        // Send Data To Google Sheet Backend
         function syncToGoogleSheets(payload) {
             fetch(APPS_SCRIPT_URL, {
                 method: "POST",
@@ -259,11 +299,15 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
             })
-            .then(() => showToast("Synced directly to Google Sheet!"))
+            .then(() => {
+                showToast("Synced to Cloud Backend!");
+                setTimeout(fetchCloudData, 1000); // Quick refresh after write
+            })
             .catch(err => console.error("Sync error:", err));
         }
 
         function switchTab(tab) {
+            if (window.innerWidth < 1024) toggleMobileSidebar(); // Auto close on mobile
             if (tab === 'internal' && !isBRACAuthenticated) {
                 requestPIN('brac', () => executeTabSwitch('internal'));
                 return;
@@ -365,22 +409,7 @@
             e.preventDefault();
             const title = document.getElementById('link-title').value.trim();
             const url = document.getElementById('link-url').value.trim();
-            const today = new Date().toISOString().split('T')[0];
 
-            docsBRAC.unshift({
-                id: Date.now(),
-                name: title,
-                format: "Web Link",
-                owner: "BRAC Team",
-                date: today,
-                size: "External URL",
-                data: url,
-                isLink: true,
-                uploader: "Kateline"
-            });
-            saveStorage();
-            
-            // Explicit routing to BOMA-BRAC DOCUMENTATION AND APPROVALS sheet
             syncToGoogleSheets({ 
                 workspace: "1",
                 sheetName: "BOMA-BRAC DOCUMENTATION AND APPROVALS",
@@ -391,10 +420,10 @@
             });
             
             closeLinkModal();
-            showToast("Documentation link saved.");
-            renderActiveWorkspace();
+            showToast("Documentation link uploaded to cloud.");
         }
 
+        // Handles Converting File to Base64 and Dispatching to Google Sheets
         function handleFileUpload(event, category) {
             const files = event.target.files;
             if (!files || files.length === 0) return;
@@ -402,68 +431,35 @@
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 const ext = file.name.split('.').pop().toUpperCase();
-                const formattedSize = (file.size / (1024 * 1024)).toFixed(1) + " MB";
-                const today = new Date().toISOString().split('T')[0];
-
                 const reader = new FileReader();
+
                 reader.onload = function(e) {
-                    const fileData = e.target.result;
+                    const base64Data = e.target.result; // Full Base64 image/PDF string
 
                     if (category === 'boma') {
-                        if (ext !== 'PDF' && ext !== 'JPEG' && ext !== 'JPG') {
-                            alert("BOMA Approvals section strictly accepts PDF or JPEG/JPG formats.");
+                        if (ext !== 'PDF' && ext !== 'JPEG' && ext !== 'JPG' && ext !== 'PNG') {
+                            alert("BOMA Approvals section accepts PDF, JPEG, or PNG formats.");
                             return;
                         }
-                        docsBOMA.unshift({
-                            id: Date.now() + i,
-                            name: file.name,
-                            type: ext,
-                            date: today,
-                            status: 'Uploaded',
-                            size: formattedSize,
-                            data: fileData,
-                            uploader: "Kateline"
-                        });
-                        saveStorage();
-                        
-                        // Sync to Workspace 1 sheet
                         syncToGoogleSheets({ 
                             workspace: "1",
                             sheetName: "BOMA-BRAC DOCUMENTATION AND APPROVALS",
                             fileName: file.name, 
                             fileType: ext, 
-                            fileData: "File Attached",
+                            fileData: base64Data, // Save actual photo data string
                             uploadedBy: "Kateline (BOMA Statutory)"
                         });
-                        
-                        showToast("Uploaded " + file.name + " to BOMA Statutory Approvals.");
-                        renderActiveWorkspace();
+                        showToast("Uploading " + file.name + " to Cloud Backend...");
                     } else if (category === 'brac') {
-                        docsBRAC.unshift({
-                            id: Date.now() + i,
-                            name: file.name,
-                            format: ext + " File",
-                            owner: "BRAC Team",
-                            date: today,
-                            size: formattedSize,
-                            data: fileData,
-                            isLink: false,
-                            uploader: "Kateline"
-                        });
-                        saveStorage();
-
-                        // Sync to Workspace 1 sheet
                         syncToGoogleSheets({ 
                             workspace: "1",
                             sheetName: "BOMA-BRAC DOCUMENTATION AND APPROVALS",
                             fileName: file.name, 
                             fileType: ext + " File", 
-                            fileData: "File Attached",
+                            fileData: base64Data, // Save actual photo data string
                             uploadedBy: "Kateline (BRAC Directive)"
                         });
-
-                        showToast("Uploaded " + file.name + " to BRAC Directives.");
-                        renderActiveWorkspace();
+                        showToast("Uploading " + file.name + " to Cloud Backend...");
                     }
                 };
                 reader.readAsDataURL(file);
@@ -473,116 +469,44 @@
         function uploadTrancheInvoice(index, event) {
             const file = event.target.files[0];
             if (!file) return;
-            procurementTranches[index].doc = file.name;
-            procurementTranches[index].uploader = "Kateline";
             
             const reader = new FileReader();
             reader.onload = function(e) {
-                procurementTranches[index].data = e.target.result;
-                saveStorage();
-                renderActiveWorkspace();
+                const base64Data = e.target.result;
+                syncToGoogleSheets({
+                    workspace: "4",
+                    sheetName: "Procurement & Payments",
+                    trancheTitle: procurementTranches[index].title,
+                    amount: procurementTranches[index].amount,
+                    status: procurementTranches[index].status,
+                    invoiceUrl: base64Data,
+                    comments: procurementTranches[index].comments
+                });
+                showToast("Uploading invoice to cloud...");
             };
             reader.readAsDataURL(file);
-
-            // Sync to Workspace 4 sheet
-            syncToGoogleSheets({
-                workspace: "4",
-                sheetName: "Procurement & Payments",
-                trancheTitle: procurementTranches[index].title,
-                amount: procurementTranches[index].amount,
-                status: procurementTranches[index].status,
-                invoiceUrl: file.name,
-                comments: procurementTranches[index].comments
-            });
-            showToast("Uploaded " + file.name + " for " + procurementTranches[index].title);
         }
 
         function uploadInternalDoc(index, event) {
             const file = event.target.files[0];
             if (!file) return;
-            internalDeliberations[index].docLink = file.name;
-            internalDeliberations[index].uploader = "Kateline";
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                internalDeliberations[index].data = e.target.result;
-                saveStorage();
-                renderActiveWorkspace();
+                const base64Data = e.target.result;
+                syncToGoogleSheets({
+                    workspace: "3",
+                    sheetName: "BRAC Internal Tracker (Tor Specs)",
+                    refCode: internalDeliberations[index].id,
+                    topic: internalDeliberations[index].topic,
+                    owner: internalDeliberations[index].owner,
+                    status: internalDeliberations[index].status,
+                    notes: internalDeliberations[index].notes,
+                    attachmentUrl: base64Data
+                });
+                showToast("Attaching document to cloud...");
             };
             reader.readAsDataURL(file);
-
-            // Sync to Workspace 3 sheet
-            syncToGoogleSheets({
-                workspace: "3",
-                sheetName: "BRAC Internal Tracker (Tor Specs)",
-                refCode: internalDeliberations[index].id,
-                topic: internalDeliberations[index].topic,
-                owner: internalDeliberations[index].owner,
-                status: internalDeliberations[index].status,
-                notes: internalDeliberations[index].notes,
-                attachmentUrl: file.name
-            });
-            showToast("Attached " + file.name + " to deliberation item.");
-        }
-
-        function removeBomaDoc(index) {
-            const doc = docsBOMA[index];
-            if (doc.uploader && doc.uploader !== "Kateline") {
-                alert("Permission Denied: Only the contributor who uploaded this file can remove it.");
-                return;
-            }
-            if (confirm("Are you sure you want to remove '" + doc.name + "'?")) {
-                docsBOMA.splice(index, 1);
-                saveStorage();
-                showToast("Document removed successfully.");
-                renderActiveWorkspace();
-            }
-        }
-
-        function removeBracDoc(index) {
-            const doc = docsBRAC[index];
-            if (doc.uploader && doc.uploader !== "Kateline") {
-                alert("Permission Denied: Only the contributor who uploaded this file can remove it.");
-                return;
-            }
-            if (confirm("Are you sure you want to remove '" + doc.name + "'?")) {
-                docsBRAC.splice(index, 1);
-                saveStorage();
-                showToast("Document removed successfully.");
-                renderActiveWorkspace();
-            }
-        }
-
-        function removeInternalDoc(index) {
-            const item = internalDeliberations[index];
-            if (item.uploader && item.uploader !== "Kateline") {
-                alert("Permission Denied: Only the contributor who attached this file can remove it.");
-                return;
-            }
-            if (confirm("Remove attached file from this item?")) {
-                internalDeliberations[index].docLink = "";
-                internalDeliberations[index].data = "";
-                internalDeliberations[index].uploader = "";
-                saveStorage();
-                showToast("Attachment removed.");
-                renderActiveWorkspace();
-            }
-        }
-
-        function removeTrancheDoc(index) {
-            const item = procurementTranches[index];
-            if (item.uploader && item.uploader !== "Kateline") {
-                alert("Permission Denied: Only the contributor who uploaded this invoice can remove it.");
-                return;
-            }
-            if (confirm("Remove uploaded invoice for this tranche?")) {
-                procurementTranches[index].doc = "";
-                procurementTranches[index].data = "";
-                procurementTranches[index].uploader = "";
-                saveStorage();
-                showToast("Invoice removed.");
-                renderActiveWorkspace();
-            }
         }
 
         function viewFile(name, type, data, isLink) {
@@ -590,8 +514,8 @@
                 window.open(data, '_blank');
                 return;
             }
-            if (!data) {
-                alert("No preview data available for this placeholder item.");
+            if (!data || data === "File Attached") {
+                alert("File content is currently syncing from cloud. Please retry in a moment.");
                 return;
             }
             const modal = document.getElementById('file-modal');
@@ -615,7 +539,6 @@
 
         function updateBoqItemStatus(index, val) {
             boqPhasesData[index].status = val;
-            saveStorage();
             syncToGoogleSheets({
                 workspace: "2",
                 sheetName: "Contract Tracker (BoQ Phases)",
@@ -624,12 +547,10 @@
                 status: val,
                 notes: boqPhasesData[index].comment
             });
-            showToast("BoQ Schedule Item Status updated.");
         }
 
         function updateBoqItemConfirmation(index, val) {
             boqPhasesData[index].confirmed = val;
-            saveStorage();
             syncToGoogleSheets({
                 workspace: "2",
                 sheetName: "Contract Tracker (BoQ Phases)",
@@ -638,12 +559,10 @@
                 status: boqPhasesData[index].status,
                 notes: boqPhasesData[index].comment
             });
-            showToast("Client BRAC confirmation status updated.");
         }
 
         function updateBoqItemComment(index, val) {
             boqPhasesData[index].comment = val;
-            saveStorage();
             syncToGoogleSheets({
                 workspace: "2",
                 sheetName: "Contract Tracker (BoQ Phases)",
@@ -656,7 +575,6 @@
 
         function updateInternalNote(index, value) {
             internalDeliberations[index].notes = value;
-            saveStorage();
             syncToGoogleSheets({ 
                 workspace: "3",
                 sheetName: "BRAC Internal Tracker (Tor Specs)",
@@ -671,7 +589,6 @@
 
         function updateInternalStatus(index, value) {
             internalDeliberations[index].status = value;
-            saveStorage();
             syncToGoogleSheets({ 
                 workspace: "3",
                 sheetName: "BRAC Internal Tracker (Tor Specs)",
@@ -682,12 +599,10 @@
                 notes: internalDeliberations[index].notes, 
                 attachmentUrl: internalDeliberations[index].docLink 
             });
-            showToast("Internal deliberation status updated.");
         }
 
         function updateTrancheStatus(index, value) {
             procurementTranches[index].status = value;
-            saveStorage();
             syncToGoogleSheets({ 
                 workspace: "4",
                 sheetName: "Procurement & Payments",
@@ -697,12 +612,10 @@
                 invoiceUrl: procurementTranches[index].doc, 
                 comments: procurementTranches[index].comments 
             });
-            showToast("Payment tranche status updated.");
         }
 
         function updateTrancheComment(index, value) {
             procurementTranches[index].comments = value;
-            saveStorage();
             syncToGoogleSheets({ 
                 workspace: "4",
                 sheetName: "Procurement & Payments",
@@ -733,48 +646,46 @@
         function renderWorkspace1(container) {
             let htmlBomaList = docsBOMA.length === 0 ? '<p class="text-xs text-slate-400 italic py-3 text-center">No BOMA statutory approvals uploaded yet (PDF, JPEG).</p>' : docsBOMA.map((d, idx) => `
                 <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-                    <div class="flex items-center space-x-3">
-                        <i class="fa-solid fa-file-pdf text-rose-500 text-lg"></i>
-                        <div>
-                            <p class="font-semibold text-slate-900 leading-snug">${d.name}</p>
+                    <div class="flex items-center space-x-3 overflow-hidden">
+                        <i class="fa-solid fa-file-pdf text-rose-500 text-lg shrink-0"></i>
+                        <div class="truncate">
+                            <p class="font-semibold text-slate-900 leading-snug truncate">${d.name}</p>
                             <p class="text-[10px] text-slate-400">${d.size} • Uploaded by ${d.uploader || 'User'} on ${d.date}</p>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-2">
+                    <div class="flex items-center space-x-2 shrink-0">
                         <button onclick="viewFile('${d.name}', '${d.type}', '${d.data}', false)" class="text-slate-500 hover:text-navy-900 p-1" title="View / Download"><i class="fa-solid fa-eye"></i></button>
-                        <button onclick="removeBomaDoc(${idx})" class="text-rose-500 hover:text-rose-700 p-1" title="Remove File"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                 </div>
             `).join('');
 
             let htmlBracList = docsBRAC.length === 0 ? '<p class="text-xs text-slate-400 italic py-3 text-center">No BRAC ToR, directives, or documentation links uploaded yet.</p>' : docsBRAC.map((d, idx) => `
                 <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-                    <div class="flex items-center space-x-3">
-                        <i class="${d.isLink ? 'fa-solid fa-link text-blue-500' : 'fa-solid fa-file-contract text-navy-800'} text-lg"></i>
-                        <div>
-                            <p class="font-semibold text-slate-900 leading-snug">${d.name}</p>
+                    <div class="flex items-center space-x-3 overflow-hidden">
+                        <i class="${d.isLink ? 'fa-solid fa-link text-blue-500' : 'fa-solid fa-file-contract text-navy-800'} text-lg shrink-0"></i>
+                        <div class="truncate">
+                            <p class="font-semibold text-slate-900 leading-snug truncate">${d.name}</p>
                             <p class="text-[10px] text-slate-400">${d.format} • ${d.date}</p>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-2">
+                    <div class="flex items-center space-x-2 shrink-0">
                         <button onclick="viewFile('${d.name}', '${d.format}', '${d.data}', ${d.isLink})" class="text-slate-500 hover:text-navy-900 p-1" title="Open"><i class="${d.isLink ? 'fa-solid fa-arrow-up-right-from-square' : 'fa-solid fa-eye'}"></i></button>
-                        <button onclick="removeBracDoc(${idx})" class="text-rose-500 hover:text-rose-700 p-1" title="Remove File"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                 </div>
             `).join('');
 
             container.innerHTML = `
-                <div class="flex items-center justify-between bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-4 lg:p-5 rounded-2xl border border-slate-200 shadow-sm gap-3">
                     <div>
-                        <h2 class="text-xl font-bold text-slate-900">1) BOMA-BRAC Documentation Approvals</h2>
+                        <h2 class="text-lg lg:text-xl font-bold text-slate-900">1) BOMA-BRAC Documentation Approvals</h2>
                         <p class="text-xs text-slate-500 mt-0.5">Central repository for statutory approvals (OSHA, NCC) and BRAC ToR instructional directives.</p>
                     </div>
                 </div>
-                <input type="file" id="file-input-boma" accept=".pdf,.jpeg,.jpg" class="hidden" onchange="handleFileUpload(event, 'boma')" multiple />
+                <input type="file" id="file-input-boma" accept=".pdf,.jpeg,.jpg,.png" class="hidden" onchange="handleFileUpload(event, 'boma')" multiple />
                 <input type="file" id="file-input-brac" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpeg,.png" class="hidden" onchange="handleFileUpload(event, 'brac')" multiple />
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 lg:p-6 space-y-4 shadow-sm">
                         <div class="flex items-center justify-between border-b pb-3">
                             <div>
                                 <h3 class="font-bold text-sm text-slate-900">BOMA Statutory Approvals</h3>
@@ -785,7 +696,7 @@
                         <div class="space-y-2">${htmlBomaList}</div>
                     </div>
 
-                    <div class="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 lg:p-6 space-y-4 shadow-sm">
                         <div class="flex items-center justify-between border-b pb-3">
                             <div>
                                 <h3 class="font-bold text-sm text-slate-900">BRAC Directives & ToR Instructions</h3>
@@ -812,51 +723,53 @@
 
             let htmlPhases = Object.keys(grouped).map(phaseName => `
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-                    <div class="bg-slate-800 text-white px-5 py-3 font-bold text-xs flex justify-between items-center">
+                    <div class="bg-slate-800 text-white px-4 lg:px-5 py-3 font-bold text-xs flex justify-between items-center">
                         <span><i class="fa-solid fa-layer-group text-amber-400 mr-2"></i>${phaseName}</span>
                         <span class="text-[10px] bg-slate-700 px-2 py-0.5 rounded text-slate-300">${grouped[phaseName].length} Schedule Items</span>
                     </div>
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 border-b font-bold text-slate-600 uppercase text-[10px]">
-                                <th class="p-3 pl-5 w-16">Ref</th>
-                                <th class="p-3">BoQ Scheduled Task / Item Description</th>
-                                <th class="p-3 w-36">Work Status</th>
-                                <th class="p-3 w-40">Client BRAC</th>
-                                <th class="p-3 pr-5 w-64">Client Comments / Notes</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            ${grouped[phaseName].map(i => `
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-3 pl-5 font-mono font-bold text-blue-600">${i.id}</td>
-                                    <td class="p-3 font-medium text-slate-900">${i.item}</td>
-                                    <td class="p-3">
-                                        <select onchange="updateBoqItemStatus(${i.globalIdx}, this.value)" class="bg-slate-100 border border-slate-300 rounded-lg px-2 py-1 text-xs font-semibold">
-                                            <option value="Pending" ${i.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                                            <option value="Commenced" ${i.status === 'Commenced' ? 'selected' : ''}>Commenced</option>
-                                            <option value="Ongoing" ${i.status === 'Ongoing' ? 'selected' : ''}>Ongoing</option>
-                                            <option value="Completed" ${i.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                                        </select>
-                                    </td>
-                                    <td class="p-3">
-                                        <select onchange="updateBoqItemConfirmation(${i.globalIdx}, this.value)" class="bg-slate-100 border border-slate-300 rounded-lg px-2 py-1 text-xs font-semibold">
-                                            <option value="Pending Confirmation" ${i.confirmed === 'Pending Confirmation' ? 'selected' : ''}>Pending Confirmation</option>
-                                            <option value="Confirmed" ${i.confirmed === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
-                                        </select>
-                                    </td>
-                                    <td class="p-3 pr-5"><input type="text" value="${i.comment}" onchange="updateBoqItemComment(${i.globalIdx}, this.value)" class="w-full bg-slate-50 border rounded-lg px-2 py-1 text-xs"></td>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse min-w-[650px]">
+                            <thead>
+                                <tr class="bg-slate-50 border-b font-bold text-slate-600 uppercase text-[10px]">
+                                    <th class="p-3 pl-5 w-16">Ref</th>
+                                    <th class="p-3">BoQ Scheduled Task / Item Description</th>
+                                    <th class="p-3 w-36">Work Status</th>
+                                    <th class="p-3 w-40">Client BRAC</th>
+                                    <th class="p-3 pr-5 w-64">Client Comments / Notes</th>
                                 </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                ${grouped[phaseName].map(i => `
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="p-3 pl-5 font-mono font-bold text-blue-600">${i.id}</td>
+                                        <td class="p-3 font-medium text-slate-900">${i.item}</td>
+                                        <td class="p-3">
+                                            <select onchange="updateBoqItemStatus(${i.globalIdx}, this.value)" class="bg-slate-100 border border-slate-300 rounded-lg px-2 py-1 text-xs font-semibold">
+                                                <option value="Pending" ${i.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                                <option value="Commenced" ${i.status === 'Commenced' ? 'selected' : ''}>Commenced</option>
+                                                <option value="Ongoing" ${i.status === 'Ongoing' ? 'selected' : ''}>Ongoing</option>
+                                                <option value="Completed" ${i.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                                            </select>
+                                        </td>
+                                        <td class="p-3">
+                                            <select onchange="updateBoqItemConfirmation(${i.globalIdx}, this.value)" class="bg-slate-100 border border-slate-300 rounded-lg px-2 py-1 text-xs font-semibold">
+                                                <option value="Pending Confirmation" ${i.confirmed === 'Pending Confirmation' ? 'selected' : ''}>Pending Confirmation</option>
+                                                <option value="Confirmed" ${i.confirmed === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+                                            </select>
+                                        </td>
+                                        <td class="p-3 pr-5"><input type="text" value="${i.comment}" onchange="updateBoqItemComment(${i.globalIdx}, this.value)" class="w-full bg-slate-50 border rounded-lg px-2 py-1 text-xs"></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             `).join('');
 
             container.innerHTML = `
-                <div class="flex items-center justify-between bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="flex items-center justify-between bg-white p-4 lg:p-5 rounded-2xl border border-slate-200 shadow-sm">
                     <div>
-                        <h2 class="text-xl font-bold text-slate-900">2) Contract Tracker (Phased BoQ Works)</h2>
+                        <h2 class="text-lg lg:text-xl font-bold text-slate-900">2) Contract Tracker (Phased BoQ Works)</h2>
                         <p class="text-xs text-slate-500 mt-0.5">Phased execution tracking according to settled BoQ schedule items and client verification.</p>
                     </div>
                 </div>
@@ -867,19 +780,19 @@
         // Workspace 3: BRAC Internal Tracker (ToR Spatial Specs & Deliberations)
         function renderWorkspace3(container) {
             container.innerHTML = `
-                <div class="flex items-center justify-between bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-4 lg:p-5 rounded-2xl border border-slate-200 shadow-sm gap-2">
                     <div>
-                        <div class="flex items-center space-x-2">
-                            <h2 class="text-xl font-bold text-slate-900">3) BRAC Internal Tracker (ToR Spatial Specifications)</h2>
-                            <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-200">UNLOCKED (PIN: AFRICABRAC2026)</span>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h2 class="text-lg lg:text-xl font-bold text-slate-900">3) BRAC Internal Tracker</h2>
+                            <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-200">UNLOCKED</span>
                         </div>
-                        <p class="text-xs text-slate-500 mt-0.5">Tracks internal pre-commencement deliberations, recommendations, and layout specifications based on Option 04 ToR.</p>
+                        <p class="text-xs text-slate-500 mt-0.5">Tracks internal pre-commencement deliberations and spatial specs.</p>
                     </div>
                 </div>
 
                 <!-- Spatial Zoning Summary Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 lg:p-5 shadow-sm space-y-3">
                         <h3 class="font-bold text-xs uppercase tracking-wider text-slate-700 flex items-center gap-2"><i class="fa-solid fa-building text-brand-500"></i> Primary Operational Zone (7,880 sq ft)</h3>
                         <ul class="text-xs text-slate-600 space-y-1.5 list-disc pl-4 leading-relaxed">
                             <li><strong>Executive Suite:</strong> 1 Director Corner Suite with internal washroom & double glazed glass.</li>
@@ -890,7 +803,7 @@
                         </ul>
                     </div>
 
-                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 lg:p-5 shadow-sm space-y-3">
                         <h3 class="font-bold text-xs uppercase tracking-wider text-slate-700 flex items-center gap-2"><i class="fa-solid fa-truck-ramp-box text-emerald-600"></i> Secondary Service & Support Zone</h3>
                         <ul class="text-xs text-slate-600 space-y-1.5 list-disc pl-4 leading-relaxed">
                             <li><strong>Independent Entrance:</strong> Direct pathway for catering deliveries bypassing operational zone.</li>
@@ -902,86 +815,86 @@
                     </div>
                 </div>
 
-                <!-- Internal Deliberations Log Table with Uploads & Recommendations -->
+                <!-- Internal Deliberations Log Table -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="p-4 bg-slate-50 border-b flex justify-between items-center">
-                        <span class="font-bold text-xs text-slate-700">Internal Deliberations, Recommendations & Attachments</span>
-                        <button onclick="openLinkModal()" class="px-2.5 py-1 bg-navy-900 text-white font-semibold text-[11px] rounded-lg shadow"><i class="fa-solid fa-link mr-1"></i> Add Link Reference</button>
+                        <span class="font-bold text-xs text-slate-700">Internal Deliberations & Attachments</span>
+                        <button onclick="openLinkModal()" class="px-2.5 py-1 bg-navy-900 text-white font-semibold text-[11px] rounded-lg shadow"><i class="fa-solid fa-link mr-1"></i> Add Link</button>
                     </div>
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead>
-                            <tr class="bg-slate-100 border-b font-bold text-slate-600 uppercase text-[10px]">
-                                <th class="p-3 pl-5 w-16">Ref</th>
-                                <th class="p-3">Topic / Specification Item</th>
-                                <th class="p-3 w-28">Owner</th>
-                                <th class="p-3 w-28">Status</th>
-                                <th class="p-3">Deliberation Notes & Recommendations</th>
-                                <th class="p-3 pr-5 w-44">Attachment / Doc</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            ${internalDeliberations.map((item, idx) => `
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-3 pl-5 font-mono font-bold text-amber-600">${item.id}</td>
-                                    <td class="p-3 font-semibold text-slate-900">${item.topic}</td>
-                                    <td class="p-3 text-slate-600">${item.owner}</td>
-                                    <td class="p-3">
-                                        <select onchange="updateInternalStatus(${idx}, this.value)" class="bg-slate-100 border rounded-lg px-2 py-1 text-xs font-medium">
-                                            <option value="In Progress" ${item.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                                            <option value="Approved" ${item.status === 'Approved' ? 'selected' : ''}>Approved</option>
-                                            <option value="Completed" ${item.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                                        </select>
-                                    </td>
-                                    <td class="p-3"><input type="text" value="${item.notes}" onchange="updateInternalNote(${idx}, this.value)" class="w-full bg-slate-50 border rounded-lg px-2 py-1 text-xs" placeholder="Add recommendation or note..."></td>
-                                    <td class="p-3 pr-5">
-                                        <input type="file" id="int-doc-${idx}" class="hidden" onchange="uploadInternalDoc(${idx}, event)" />
-                                        ${item.docLink ? `
-                                            <div class="flex items-center space-x-1.5">
-                                                <button onclick="viewFile('${item.docLink}', 'File', '${item.data}', false)" class="text-blue-600 hover:underline truncate text-[11px] font-semibold max-w-[100px]" title="${item.docLink}">${item.docLink}</button>
-                                                <button onclick="removeInternalDoc(${idx})" class="text-rose-500 hover:text-rose-700" title="Remove Attachment"><i class="fa-solid fa-trash-can text-[11px]"></i></button>
-                                            </div>
-                                        ` : `
-                                            <button onclick="triggerFileUpload('int-doc-${idx}')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border text-slate-700 text-[11px] rounded-md font-semibold"><i class="fa-solid fa-upload mr-1"></i>Attach</button>
-                                        `}
-                                    </td>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse min-w-[700px]">
+                            <thead>
+                                <tr class="bg-slate-100 border-b font-bold text-slate-600 uppercase text-[10px]">
+                                    <th class="p-3 pl-5 w-16">Ref</th>
+                                    <th class="p-3">Topic / Specification Item</th>
+                                    <th class="p-3 w-28">Owner</th>
+                                    <th class="p-3 w-28">Status</th>
+                                    <th class="p-3">Deliberation Notes & Recommendations</th>
+                                    <th class="p-3 pr-5 w-44">Attachment / Doc</th>
                                 </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                ${internalDeliberations.map((item, idx) => `
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="p-3 pl-5 font-mono font-bold text-amber-600">${item.id}</td>
+                                        <td class="p-3 font-semibold text-slate-900">${item.topic}</td>
+                                        <td class="p-3 text-slate-600">${item.owner}</td>
+                                        <td class="p-3">
+                                            <select onchange="updateInternalStatus(${idx}, this.value)" class="bg-slate-100 border rounded-lg px-2 py-1 text-xs font-medium">
+                                                <option value="In Progress" ${item.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                                <option value="Approved" ${item.status === 'Approved' ? 'selected' : ''}>Approved</option>
+                                                <option value="Completed" ${item.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                                            </select>
+                                        </td>
+                                        <td class="p-3"><input type="text" value="${item.notes}" onchange="updateInternalNote(${idx}, this.value)" class="w-full bg-slate-50 border rounded-lg px-2 py-1 text-xs" placeholder="Add recommendation or note..."></td>
+                                        <td class="p-3 pr-5">
+                                            <input type="file" id="int-doc-${idx}" class="hidden" onchange="uploadInternalDoc(${idx}, event)" />
+                                            ${item.docLink ? `
+                                                <div class="flex items-center space-x-1.5">
+                                                    <button onclick="viewFile('${item.docLink}', 'File', '${item.data}', false)" class="text-blue-600 hover:underline truncate text-[11px] font-semibold max-w-[100px]" title="${item.docLink}">${item.docLink}</button>
+                                                </div>
+                                            ` : `
+                                                <button onclick="triggerFileUpload('int-doc-${idx}')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 border text-slate-700 text-[11px] rounded-md font-semibold"><i class="fa-solid fa-upload mr-1"></i>Attach</button>
+                                            `}
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             `;
         }
 
-        // Workspace 4: Procurement & Payments (With Contributor Uploads & Comments)
+        // Workspace 4: Procurement & Payments
         function renderWorkspace4(container) {
             container.innerHTML = `
-                <div class="flex items-center justify-between bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-4 lg:p-5 rounded-2xl border border-slate-200 shadow-sm gap-2">
                     <div>
-                        <div class="flex items-center space-x-2">
-                            <h2 class="text-xl font-bold text-slate-900">4) Procurement & Payments</h2>
-                            <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-200">UNLOCKED (PIN: OperationsTracy2026)</span>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h2 class="text-lg lg:text-xl font-bold text-slate-900">4) Procurement & Payments</h2>
+                            <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-200">UNLOCKED</span>
                         </div>
-                        <p class="text-xs text-slate-500 mt-0.5">Pre-commencement financial tranches, contributor uploads, and payment offset status.</p>
+                        <p class="text-xs text-slate-500 mt-0.5">Pre-commencement financial tranches and payment ledger.</p>
                     </div>
                 </div>
 
                 <!-- Financial Budget Overview Card -->
-                <div class="bg-slate-900 text-white p-5 rounded-2xl border border-slate-800 shadow space-y-4">
-                    <div class="flex flex-wrap justify-between items-center text-xs">
+                <div class="bg-slate-900 text-white p-4 lg:p-5 rounded-2xl border border-slate-800 shadow space-y-4">
+                    <div class="flex flex-wrap justify-between items-center text-xs gap-3">
                         <div>
                             <p class="text-slate-400 text-[11px]">Total Settled BoQ Budget Envelope</p>
-                            <p class="text-xl font-mono font-bold text-white mt-0.5">KES 24,782,414 <span class="text-xs text-slate-400 font-normal">(Incl. 16% VAT)</span></p>
+                            <p class="text-lg lg:text-xl font-mono font-bold text-white mt-0.5">KES 24,782,414 <span class="text-xs text-slate-400 font-normal">(Incl. 16% VAT)</span></p>
                         </div>
                         <div>
                             <p class="text-slate-400 text-[11px]">Offset Payments Made To Date</p>
-                            <p class="text-xl font-mono font-bold text-emerald-400 mt-0.5">KES 0 <span class="text-xs text-slate-400 font-normal">(0% Disbursed)</span></p>
+                            <p class="text-lg lg:text-xl font-mono font-bold text-emerald-400 mt-0.5">KES 0 <span class="text-xs text-slate-400 font-normal">(0% Disbursed)</span></p>
                         </div>
                         <div>
                             <p class="text-slate-400 text-[11px]">Current Financial Status</p>
-                            <p class="text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-lg mt-1 inline-block">Pre-Commencement Procurement Stage</p>
+                            <p class="text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-lg mt-1 inline-block">Pre-Commencement Stage</p>
                         </div>
                     </div>
-                    <!-- Visual Budget Progress Bar -->
                     <div>
                         <div class="flex justify-between text-[11px] text-slate-400 mb-1">
                             <span>Disbursement Progress</span>
@@ -993,54 +906,57 @@
                     </div>
                 </div>
 
-                <!-- Payments Table with Contributor Uploads & Comments -->
+                <!-- Payments Table -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="p-4 bg-slate-50 border-b font-bold text-xs text-slate-700">Scheduled Payment Tranches, Invoices & Offset Ledger</div>
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead>
-                            <tr class="bg-slate-100 border-b font-bold text-slate-600 uppercase text-[10px]">
-                                <th class="p-3 pl-5">Tranche Title</th>
-                                <th class="p-3 w-32">Amount (KES)</th>
-                                <th class="p-3 w-40">Disbursement Status</th>
-                                <th class="p-3 w-48">Upload Invoice / Receipt</th>
-                                <th class="p-3 pr-5">Contributor Comments & Offset Notes</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            ${procurementTranches.map((t, idx) => `
-                                <tr class="hover:bg-slate-50">
-                                    <td class="p-3 pl-5 font-semibold text-slate-900">${t.title}</td>
-                                    <td class="p-3 font-mono font-bold text-emerald-700">${t.amount}</td>
-                                    <td class="p-3">
-                                        <select onchange="updateTrancheStatus(${idx}, this.value)" class="bg-slate-100 border rounded-lg px-2 py-1 text-xs font-medium">
-                                            <option value="Pending Invoice / Pre-Commencement" ${t.status.includes('Pending') ? 'selected' : ''}>Pending Invoice</option>
-                                            <option value="Scheduled" ${t.status === 'Scheduled' ? 'selected' : ''}>Scheduled</option>
-                                            <option value="Disbursed" ${t.status === 'Disbursed' ? 'selected' : ''}>Disbursed</option>
-                                        </select>
-                                    </td>
-                                    <td class="p-3">
-                                        <input type="file" id="proc-doc-${idx}" class="hidden" onchange="uploadTrancheInvoice(${idx}, event)" />
-                                        ${t.doc ? `
-                                            <div class="flex items-center space-x-1.5">
-                                                <button onclick="viewFile('${t.doc}', 'Invoice', '${t.data}', false)" class="text-blue-600 hover:underline truncate text-[11px] font-semibold max-w-[100px]" title="${t.doc}">${t.doc}</button>
-                                                <button onclick="removeTrancheDoc(${idx})" class="text-rose-500 hover:text-rose-700" title="Remove Invoice"><i class="fa-solid fa-trash-can text-[11px]"></i></button>
-                                            </div>
-                                        ` : `
-                                            <button onclick="triggerFileUpload('proc-doc-${idx}')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 text-[11px] rounded-md font-semibold"><i class="fa-solid fa-upload mr-1"></i>Upload File</button>
-                                        `}
-                                    </td>
-                                    <td class="p-3 pr-5">
-                                        <input type="text" value="${t.comments || ''}" onchange="updateTrancheComment(${idx}, this.value)" class="w-full bg-slate-50 border rounded-lg px-2 py-1 text-xs" placeholder="Enter offset note or comment...">
-                                    </td>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse min-w-[700px]">
+                            <thead>
+                                <tr class="bg-slate-100 border-b font-bold text-slate-600 uppercase text-[10px]">
+                                    <th class="p-3 pl-5">Tranche Title</th>
+                                    <th class="p-3 w-32">Amount (KES)</th>
+                                    <th class="p-3 w-40">Disbursement Status</th>
+                                    <th class="p-3 w-48">Upload Invoice / Receipt</th>
+                                    <th class="p-3 pr-5">Contributor Comments & Offset Notes</th>
                                 </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                ${procurementTranches.map((t, idx) => `
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="p-3 pl-5 font-semibold text-slate-900">${t.title}</td>
+                                        <td class="p-3 font-mono font-bold text-emerald-700">${t.amount}</td>
+                                        <td class="p-3">
+                                            <select onchange="updateTrancheStatus(${idx}, this.value)" class="bg-slate-100 border rounded-lg px-2 py-1 text-xs font-medium">
+                                                <option value="Pending Invoice / Pre-Commencement" ${t.status.includes('Pending') ? 'selected' : ''}>Pending Invoice</option>
+                                                <option value="Scheduled" ${t.status === 'Scheduled' ? 'selected' : ''}>Scheduled</option>
+                                                <option value="Disbursed" ${t.status === 'Disbursed' ? 'selected' : ''}>Disbursed</option>
+                                            </select>
+                                        </td>
+                                        <td class="p-3">
+                                            <input type="file" id="proc-doc-${idx}" class="hidden" onchange="uploadTrancheInvoice(${idx}, event)" />
+                                            ${t.doc ? `
+                                                <div class="flex items-center space-x-1.5">
+                                                    <button onclick="viewFile('${t.doc}', 'Invoice', '${t.data}', false)" class="text-blue-600 hover:underline truncate text-[11px] font-semibold max-w-[100px]" title="${t.doc}">${t.doc}</button>
+                                                </div>
+                                            ` : `
+                                                <button onclick="triggerFileUpload('proc-doc-${idx}')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 text-[11px] rounded-md font-semibold"><i class="fa-solid fa-upload mr-1"></i>Upload File</button>
+                                            `}
+                                        </td>
+                                        <td class="p-3 pr-5">
+                                            <input type="text" value="${t.comments || ''}" onchange="updateTrancheComment(${idx}, this.value)" class="w-full bg-slate-50 border rounded-lg px-2 py-1 text-xs" placeholder="Enter offset note or comment...">
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             `;
         }
 
-        renderActiveWorkspace();
+        // Initialize and Start Realtime Polling Loop
+        fetchCloudData();
+        setInterval(fetchCloudData, 8000); // Automatically pulls new uploads across all devices every 8s
     </script>
 </body>
 </html>
