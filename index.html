@@ -251,14 +251,15 @@
             document.getElementById('badge-docs').innerText = docsBOMA.length + docsBRAC.length;
         }
 
+        // Updated sync function with mode: 'no-cors' to prevent network blocks
         function syncToGoogleSheets(payload) {
             fetch(APPS_SCRIPT_URL, {
                 method: "POST",
+                mode: "no-cors",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
             })
-            .then(res => res.json())
-            .then(data => showToast("Synced directly to Google Sheet!"))
+            .then(() => showToast("Synced directly to Google Sheet!"))
             .catch(err => console.error("Sync error:", err));
         }
 
@@ -375,10 +376,20 @@
                 size: "External URL",
                 data: url,
                 isLink: true,
-                uploader: "Kateline" // Current user identifier
+                uploader: "Kateline"
             });
             saveStorage();
-            syncToGoogleSheets({ action: "uploadDoc", fileName: title, fileType: "URL Link", fileData: url });
+            
+            // Explicit routing to BOMA-BRAC DOCUMENTATION AND APPROVALS sheet
+            syncToGoogleSheets({ 
+                workspace: "1",
+                sheetName: "BOMA-BRAC DOCUMENTATION AND APPROVALS",
+                fileName: title, 
+                fileType: "URL Link", 
+                fileData: url,
+                uploadedBy: "Kateline (BRAC Directives Link)"
+            });
+            
             closeLinkModal();
             showToast("Documentation link saved.");
             renderActiveWorkspace();
@@ -414,7 +425,17 @@
                             uploader: "Kateline"
                         });
                         saveStorage();
-                        syncToGoogleSheets({ action: "uploadDoc", fileName: file.name, fileType: ext, fileData: "Uploaded" });
+                        
+                        // Sync to Workspace 1 sheet
+                        syncToGoogleSheets({ 
+                            workspace: "1",
+                            sheetName: "BOMA-BRAC DOCUMENTATION AND APPROVALS",
+                            fileName: file.name, 
+                            fileType: ext, 
+                            fileData: "File Attached",
+                            uploadedBy: "Kateline (BOMA Statutory)"
+                        });
+                        
                         showToast("Uploaded " + file.name + " to BOMA Statutory Approvals.");
                         renderActiveWorkspace();
                     } else if (category === 'brac') {
@@ -430,7 +451,17 @@
                             uploader: "Kateline"
                         });
                         saveStorage();
-                        syncToGoogleSheets({ action: "uploadDoc", fileName: file.name, fileType: ext, fileData: "Uploaded" });
+
+                        // Sync to Workspace 1 sheet
+                        syncToGoogleSheets({ 
+                            workspace: "1",
+                            sheetName: "BOMA-BRAC DOCUMENTATION AND APPROVALS",
+                            fileName: file.name, 
+                            fileType: ext + " File", 
+                            fileData: "File Attached",
+                            uploadedBy: "Kateline (BRAC Directive)"
+                        });
+
                         showToast("Uploaded " + file.name + " to BRAC Directives.");
                         renderActiveWorkspace();
                     }
@@ -445,7 +476,6 @@
             procurementTranches[index].doc = file.name;
             procurementTranches[index].uploader = "Kateline";
             
-            // Store file data if available
             const reader = new FileReader();
             reader.onload = function(e) {
                 procurementTranches[index].data = e.target.result;
@@ -454,12 +484,14 @@
             };
             reader.readAsDataURL(file);
 
+            // Sync to Workspace 4 sheet
             syncToGoogleSheets({
-                action: "updateProcurement",
+                workspace: "4",
+                sheetName: "Procurement & Payments",
                 trancheTitle: procurementTranches[index].title,
                 amount: procurementTranches[index].amount,
                 status: procurementTranches[index].status,
-                docLink: file.name,
+                invoiceUrl: file.name,
                 comments: procurementTranches[index].comments
             });
             showToast("Uploaded " + file.name + " for " + procurementTranches[index].title);
@@ -479,18 +511,20 @@
             };
             reader.readAsDataURL(file);
 
+            // Sync to Workspace 3 sheet
             syncToGoogleSheets({
-                action: "updateInternal",
-                id: internalDeliberations[index].id,
+                workspace: "3",
+                sheetName: "BRAC Internal Tracker (Tor Specs)",
+                refCode: internalDeliberations[index].id,
                 topic: internalDeliberations[index].topic,
+                owner: internalDeliberations[index].owner,
                 status: internalDeliberations[index].status,
                 notes: internalDeliberations[index].notes,
-                linkOrDoc: file.name
+                attachmentUrl: file.name
             });
             showToast("Attached " + file.name + " to deliberation item.");
         }
 
-        // Deletion functions ensuring only the original uploader can remove the file
         function removeBomaDoc(index) {
             const doc = docsBOMA[index];
             if (doc.uploader && doc.uploader !== "Kateline") {
@@ -582,44 +616,102 @@
         function updateBoqItemStatus(index, val) {
             boqPhasesData[index].status = val;
             saveStorage();
+            syncToGoogleSheets({
+                workspace: "2",
+                sheetName: "Contract Tracker (BoQ Phases)",
+                phaseName: boqPhasesData[index].item,
+                amount: boqPhasesData[index].confirmed,
+                status: val,
+                notes: boqPhasesData[index].comment
+            });
             showToast("BoQ Schedule Item Status updated.");
         }
 
         function updateBoqItemConfirmation(index, val) {
             boqPhasesData[index].confirmed = val;
             saveStorage();
+            syncToGoogleSheets({
+                workspace: "2",
+                sheetName: "Contract Tracker (BoQ Phases)",
+                phaseName: boqPhasesData[index].item,
+                amount: val,
+                status: boqPhasesData[index].status,
+                notes: boqPhasesData[index].comment
+            });
             showToast("Client BRAC confirmation status updated.");
         }
 
         function updateBoqItemComment(index, val) {
             boqPhasesData[index].comment = val;
             saveStorage();
+            syncToGoogleSheets({
+                workspace: "2",
+                sheetName: "Contract Tracker (BoQ Phases)",
+                phaseName: boqPhasesData[index].item,
+                amount: boqPhasesData[index].confirmed,
+                status: boqPhasesData[index].status,
+                notes: val
+            });
         }
 
         function updateInternalNote(index, value) {
             internalDeliberations[index].notes = value;
             saveStorage();
-            syncToGoogleSheets({ action: "updateInternal", id: internalDeliberations[index].id, topic: internalDeliberations[index].topic, status: internalDeliberations[index].status, notes: value, linkOrDoc: internalDeliberations[index].docLink });
+            syncToGoogleSheets({ 
+                workspace: "3",
+                sheetName: "BRAC Internal Tracker (Tor Specs)",
+                refCode: internalDeliberations[index].id, 
+                topic: internalDeliberations[index].topic, 
+                owner: internalDeliberations[index].owner,
+                status: internalDeliberations[index].status, 
+                notes: value, 
+                attachmentUrl: internalDeliberations[index].docLink 
+            });
         }
 
         function updateInternalStatus(index, value) {
             internalDeliberations[index].status = value;
             saveStorage();
-            syncToGoogleSheets({ action: "updateInternal", id: internalDeliberations[index].id, topic: internalDeliberations[index].topic, status: value, notes: internalDeliberations[index].notes, linkOrDoc: internalDeliberations[index].docLink });
+            syncToGoogleSheets({ 
+                workspace: "3",
+                sheetName: "BRAC Internal Tracker (Tor Specs)",
+                refCode: internalDeliberations[index].id, 
+                topic: internalDeliberations[index].topic, 
+                owner: internalDeliberations[index].owner,
+                status: value, 
+                notes: internalDeliberations[index].notes, 
+                attachmentUrl: internalDeliberations[index].docLink 
+            });
             showToast("Internal deliberation status updated.");
         }
 
         function updateTrancheStatus(index, value) {
             procurementTranches[index].status = value;
             saveStorage();
-            syncToGoogleSheets({ action: "updateProcurement", trancheTitle: procurementTranches[index].title, amount: procurementTranches[index].amount, status: value, docLink: procurementTranches[index].doc, comments: procurementTranches[index].comments });
+            syncToGoogleSheets({ 
+                workspace: "4",
+                sheetName: "Procurement & Payments",
+                trancheTitle: procurementTranches[index].title, 
+                amount: procurementTranches[index].amount, 
+                status: value, 
+                invoiceUrl: procurementTranches[index].doc, 
+                comments: procurementTranches[index].comments 
+            });
             showToast("Payment tranche status updated.");
         }
 
         function updateTrancheComment(index, value) {
             procurementTranches[index].comments = value;
             saveStorage();
-            syncToGoogleSheets({ action: "updateProcurement", trancheTitle: procurementTranches[index].title, amount: procurementTranches[index].amount, status: procurementTranches[index].status, docLink: procurementTranches[index].doc, comments: value });
+            syncToGoogleSheets({ 
+                workspace: "4",
+                sheetName: "Procurement & Payments",
+                trancheTitle: procurementTranches[index].title, 
+                amount: procurementTranches[index].amount, 
+                status: procurementTranches[index].status, 
+                invoiceUrl: procurementTranches[index].doc, 
+                comments: value 
+            });
         }
 
         function showToast(msg) {
